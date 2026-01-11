@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>画像アップロードWEB</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0; padding: 1rem; background-color: #f0f2f5; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff;
+    padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #0d2c54;
+    font-size: 2rem; margin-bottom: 2rem; }
+    .form-group { margin-bottom: 1.5rem; }
+    label { display: block;
+    font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.5rem; }
+    input[type="text"], input[type="tel"], input[type="number"] { width: 100%; padding: 0.8rem;
+    font-size: 1.2rem; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s, background-color 0.3s;
+    }
+    .file-upload-btn { display: inline-block; padding: 0.8rem 1.2rem; font-size: 1.2rem; font-weight: 600; border: 2px solid #ccc;
+    border-radius: 8px; color: #333; background-color: #f0f2f5; cursor: pointer; text-align: center; transition: border-color 0.3s;
+    }
+    .file-name-display { margin-left: 1rem; font-size: 1rem; color: #555; word-break: break-all;
+    }
+    .qr-section { display: flex; align-items: center; gap: 10px; }
+    #qr-btn { font-size: 3rem;
+    padding: 0; width: 60px; height: 60px; line-height: 60px; background: none; border: none; cursor: pointer;
+    }
+    .thumb-list { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 10px;
+    }
+    .thumb { display: flex; align-items: center; gap: 12px; border: 1px solid #eee; border-radius: 10px; padding: 8px;
+    background: #fafafa; }
+    .thumb img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px;
+    border: 1px solid #ddd; }
+    .thumb .meta { flex: 1;
+    }
+    .thumb .meta .name { font-size: .95rem; color: #333; word-break: break-all;
+    }
+    .thumb .meta .size { font-size: .8rem; color: #777;
+    }
+    .thumb .controls { display: flex; align-items: center; gap: 8px;
+    }
+    .checkbox-group { display: flex; align-items: center; gap: 8px;
+    }
+    .checkbox-group input { width: 1.2rem; height: 1.2rem; }
+    button[type="submit"] { width: 100%;
+    padding: 1.2rem; font-size: 1.6rem; font-weight: bold; border: none; border-radius: 8px; color: white; background-color: #f58220; cursor: pointer; margin-top: 1.5rem;
+    }
+    #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none;
+    justify-content: center; align-items: center; z-index: 10002; }
+    #camera-overlay { position: fixed; top: 0; left: 0; width: 100%;
+    height: 100%; background-color: #000; display: none; z-index: 10000; }
+    #qr-reader { width: 100%; height: 100%; object-fit: cover;
+    }
+    #close-camera-btn { position: absolute; top: 20px; left: 20px; font-size: 2rem; color: white; background: rgba(0,0,0,0.5); border-radius: 50%;
+    border: none; width: 50px; height: 50px; cursor: pointer; }
+    .input-error { border-color: #d93025 !important;
+    }
+    .alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 10001; padding: 1rem; box-sizing: border-box; opacity: 0;
+    transition: opacity 0.3s; }
+    .alert-overlay.show { opacity: 1; }
+    .alert-box { background: white;
+    padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 90%; width: 320px; transform: scale(0.9); transition: transform 0.3s;
+    }
+    .alert-overlay.show .alert-box { transform: scale(1); }
+    .alert-message { font-size: 1.2rem; margin: 15px 0;
+    color: #333; font-weight: bold; line-height: 1.5; }
+    .alert-close-btn { width: 100%; padding: 0.8rem; font-size: 1.2rem; font-weight: bold;
+    border: none; border-radius: 8px; color: white; background-color: #0d2c54; cursor: pointer; margin-top: 10px;
+    }
+    .scan-success { background-color: #e6ffed !important; border-color: #34c759 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>画像アップロードWEB</h1>
+    <form id="upload-form" novalidate>
+      <div class="form-group">
+        <label for="staffCode">担当者コード</label>
+        <input type="number" id="staffCode" name="staffCode" inputmode="numeric" pattern="[0-9]*" placeholder="80082 等">
+      </div>
+
+      <div class="form-group">
+        <label for="invoiceNumber">受注番号（15桁）</label>
+        <div class="qr-section">
+          <input type="tel" id="invoiceNumber" name="invoiceNumber" maxlength="15" pattern="[0-9]*" placeholder="15桁">
+          <button type="button" id="qr-btn">📷</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="customerName">顧客名</label>
+        <input type="text" id="customerName" name="customerName">
+      </div>
+
+      <div class="form-group" style="display:none;">
+        <label for="address">住所</label>
+        <input type="text" id="address" name="address">
+      </div>
+
+      <div class="form-group">
+        <label>画像ファイル（最大10枚）</label>
+        <div>
+          <label for="imageFile" id="imageFileLabel" class="file-upload-btn">ファイルを選択（複数可）</label>
+          <input type="file" id="imageFile" name="imageFile" accept="image/*" multiple style="display:none;">
+          <span id="fileName" class="file-name-display">選択されていません</span>
+        </div>
+        <div id="thumbList" class="thumb-list"></div>
+      </div>
+
+      <button type="submit">この内容で送信</button>
+    </form>
+  </div>
+
+  <div id="loading"><p>送信中...</p></div>
+  <div id="camera-overlay"><div id="qr-reader"></div><button id="close-camera-btn" type="button">&times;</button></div>
+  <div id="error-alert" class="alert-overlay"><div class="alert-box"><p class="alert-message" id="error-message"></p><button class="alert-close-btn">閉じる</button></div></div>
+  <div id="success-alert" class="alert-overlay"><div class="alert-box"><p class="alert-message">安心してください<br>送信できましたよ！</p><button class="alert-close-btn">登録画面に戻る</button></div></div>
+
+  <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+  <script>
+  // ★★★ 指定されたGASのURLを埋め込みました ★★★
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzVcEuhefEDtYuz6xnl-DCm8BQnYxZvdEiZxtDhgMCpXDz8WelEeA4tPr9FFYacDl5nQQ/exec";
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const staffCodeInput = document.getElementById('staffCode');
+    const invoiceInput = document.getElementById('invoiceNumber');
+    const customerInput = document.getElementById('customerName');
+    const addressInput = document.getElementById('address');
+    const imageFileInput = document.getElementById('imageFile');
+    const imageFileLabel = document.getElementById('imageFileLabel');
+    const fileNameDisplay = document.getElementById('fileName');
+    const thumbList = document.getElementById('thumbList');
+    const uploadForm = document.getElementById('upload-form');
+    const loadingDiv = document.getElementById('loading');
+    const errorAlert = document.getElementById('error-alert');
+    const successAlert = document.getElementById('success-alert');
+    const errorMessage = document.getElementById('error-message');
+    const cameraOverlay = document.getElementById('camera-overlay');
+    const qrBtn = document.getElementById('qr-btn');
+    const closeCameraBtn = document.getElementById('close-camera-btn');
+    let html5QrCode = null;
+
+    function showAlert(element, message) {
+      if (message) errorMessage.textContent = message;
+      element.style.display = 'flex';
+      setTimeout(() => element.classList.add('show'), 10);
+    }
+    document.querySelectorAll('.alert-overlay').forEach(ov => {
+      ov.addEventListener('click', (e) => {
+        if (e.target === ov || e.target.classList.contains('alert-close-btn')) {
+          ov.classList.remove('show'); setTimeout(() => { ov.style.display = 'none'; }, 300);
+        }
+      });
+    });
+
+    // QR
+    function stopCamera() {
+      if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().catch(()=>{}); }
+      cameraOverlay.style.display = 'none';
+      html5QrCode = null;
+    }
+    qrBtn.addEventListener('click', () => {
+      cameraOverlay.style.display = 'block';
+      html5QrCode = new Html5Qrcode("qr-reader");
+      const qrConfig = { fps: 10, videoConstraints: { facingMode: "environment", focusMode: "continuous" } };
+      html5QrCode.start({ facingMode: "environment" }, qrConfig, (decodedText) => {
+        const parts = decodedText.split(',');
+        if (parts.length >= 1) {
+          invoiceInput.value = (parts[0] || '').trim();
+          if (parts[2]) customerInput.value = parts[2].trim();
+          if (parts[3]) addressInput.value = parts[3].trim();
+          [invoiceInput, customerInput, addressInput].forEach(el => { if (el.value) { el.classList.add('scan-success'); setTimeout(() => el.classList.remove('scan-success'), 1500); }});
+          stopCamera();
+        } else { alert('QRコードの形式が正しくありません。'); }
+      }).catch(() => { alert('カメラを起動できませんでした。ブラウザのカメラアクセスを許可してください。'); stopCamera(); });
+    });
+    closeCameraBtn.addEventListener('click', stopCamera);
+
+    // ファイル選択：最大10枚
+    const state = { items: [] };
+    imageFileInput.addEventListener('change', () => {
+      const files = Array.from(imageFileInput.files || []);
+      if (files.length === 0) {
+        state.items = []; thumbList.innerHTML = ''; fileNameDisplay.textContent = '選択されていません'; return;
+      }
+      if (files.length > 10) showAlert(errorAlert, '一度に選択できる画像は最大10枚です。');
+      
+      // 最大10枚まで切り出し
+      state.items = files.slice(0, 10).map(f => ({ file: f, name: f.name, size: f.size, rotate: false }));
+      fileNameDisplay.textContent = state.items.map(it => it.name).join(', ');
+      renderThumbs();
+    });
+
+    function renderThumbs() {
+      thumbList.innerHTML = '';
+      state.items.forEach((it) => {
+        const row = document.createElement('div'); row.className = 'thumb';
+        const img = document.createElement('img'); row.appendChild(img);
+        const meta = document.createElement('div'); meta.className = 'meta';
+        meta.innerHTML = `<div class="name">${it.name}</div><div class="size">${(it.size/1024).toFixed(1)} KB</div>`;
+        row.appendChild(meta);
+        
+        const ctr = document.createElement('div'); ctr.className = 'controls';
+        const cbxWrap = document.createElement('label'); cbxWrap.className = 'checkbox-group';
+        const cbx = document.createElement('input'); cbx.type = 'checkbox'; cbx.checked = it.rotate;
+        cbx.addEventListener('change', () => { it.rotate = cbx.checked; });
+        cbxWrap.append(cbx, ' 横向き(+90°)');
+        ctr.appendChild(cbxWrap); row.appendChild(ctr); thumbList.appendChild(row);
+
+        const url = URL.createObjectURL(it.file);
+        img.onload = () => URL.revokeObjectURL(url);
+        img.src = url;
+      });
+    }
+
+    // 送信
+    uploadForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      let isValid = true;
+      document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+      if (!staffCodeInput.value.trim()) { staffCodeInput.classList.add('input-error'); isValid = false; }
+      if (!/^\d{15}$/.test((invoiceInput.value || '').trim())) { invoiceInput.classList.add('input-error'); isValid = false; }
+      if (!customerInput.value.trim()) { customerInput.classList.add('input-error'); isValid = false; }
+      if (state.items.length === 0) { imageFileLabel.classList.add('input-error'); isValid = false; }
+      if (state.items.length > 10) { showAlert(errorAlert, '画像は最大10枚までです。'); isValid = false; }
+      if (!isValid) { showAlert(errorAlert, '入力されていない項目があります（受注番号は15桁の数字）。'); return; }
+
+      loadingDiv.style.display = 'flex';
+
+      try {
+        const conv = state.items.map(it => compressToJpegWithOptionalRotate(it.file, it.rotate));
+        const results = await Promise.all(conv);
+        const images = results.map(r => ({ mimeType: r.mimeType, base64: r.base64, isLandscape: r.rotated }));
+        
+        const dataObject = {
+          staffCode: staffCodeInput.value.trim(),
+          invoiceNumber: invoiceInput.value.trim(),
+          customerName: customerInput.value.trim(),
+          address: addressInput.value.trim(),
+          images: images
+        };
+
+        const response = await fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(dataObject)
+        });
+
+        const result = await response.json();
+
+        loadingDiv.style.display = 'none';
+        if (result.status === 'success') {
+          showAlert(successAlert);
+        } else {
+          showAlert(errorAlert, result.message || '送信に失敗しました。');
+        }
+      } catch (err) {
+        console.error(err);
+        loadingDiv.style.display = 'none';
+        showAlert(errorAlert, '送信エラー: ' + err.message);
+      }
+    });
+
+    async function compressToJpegWithOptionalRotate(file, rotateCW) {
+      const img = await new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const im = new Image();
+        im.onload = () => { URL.revokeObjectURL(url); resolve(im); };
+        im.onerror = e => { URL.revokeObjectURL(url); reject(e); };
+        im.src = url;
+      });
+
+      const rot = rotateCW ? 90 : 0;
+      const rad = rot * Math.PI / 180;
+      const sw = img.naturalWidth, sh = img.naturalHeight;
+      const abs = Math.abs, cos = Math.cos(rad), sin = Math.sin(rad);
+      const bw = abs(sw * cos) + abs(sh * sin);
+      const bh = abs(sw * sin) + abs(sh * cos);
+      const maxSide = 2000;
+      const scale = Math.min(1, maxSide / Math.max(bw, bh));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bw * scale); canvas.height = Math.round(bh * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.rotate(rad);
+      ctx.drawImage(img, -Math.round(sw*scale)/2, -Math.round(sh*scale)/2, Math.round(sw*scale), Math.round(sh*scale));
+      const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+      return { mimeType: 'image/jpeg', base64: dataURL.split(',')[1], rotated: !!rotateCW };
+    }
+  });
+  </script>
+</body>
+</html>

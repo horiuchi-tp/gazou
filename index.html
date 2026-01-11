@@ -14,9 +14,10 @@
     .form-group { margin-bottom: 1.5rem; }
     label { display: block;
     font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.5rem; }
-    input[type="text"], input[type="tel"], input[type="number"] { width: 100%; padding: 0.8rem;
+    /* selectタグのスタイルを追加しました */
+    input[type="text"], input[type="tel"], input[type="number"], select { width: 100%; padding: 0.8rem;
     font-size: 1.2rem; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s, background-color 0.3s;
-    }
+    background-color: #fff; }
     .file-upload-btn { display: inline-block; padding: 0.8rem 1.2rem; font-size: 1.2rem; font-weight: 600; border: 2px solid #ccc;
     border-radius: 8px; color: #333; background-color: #f0f2f5; cursor: pointer; text-align: center; transition: border-color 0.3s;
     }
@@ -77,6 +78,16 @@
   <div class="container">
     <h1>画像アップロードWEB</h1>
     <form id="upload-form" novalidate>
+      
+      <div class="form-group">
+        <label for="reportType">報告内容を選択してください</label>
+        <select id="reportType" name="reportType">
+          <option value="" disabled selected>タップして選択</option>
+          <option value="ゼロエミ">ゼロエミ</option>
+          <option value="見積書">見積書</option>
+          <option value="報告">報告</option>
+        </select>
+      </div>
       <div class="form-group">
         <label for="staffCode">担当者コード</label>
         <input type="number" id="staffCode" name="staffCode" inputmode="numeric" pattern="[0-9]*" placeholder="80082 等">
@@ -122,10 +133,11 @@
   <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
   <script>
-  // ★★★ 指定されたGASのURLを埋め込みました ★★★
+  // GASのURL
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzVcEuhefEDtYuz6xnl-DCm8BQnYxZvdEiZxtDhgMCpXDz8WelEeA4tPr9FFYacDl5nQQ/exec";
 
   document.addEventListener('DOMContentLoaded', function() {
+    const reportTypeInput = document.getElementById('reportType'); // 追加
     const staffCodeInput = document.getElementById('staffCode');
     const invoiceInput = document.getElementById('invoiceNumber');
     const customerInput = document.getElementById('customerName');
@@ -222,6 +234,11 @@
       e.preventDefault();
       let isValid = true;
       document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+
+      // ▼▼▼ 追加箇所：報告内容のチェック ▼▼▼
+      if (!reportTypeInput.value) { reportTypeInput.classList.add('input-error'); isValid = false; }
+      // ▲▲▲ 追加箇所ここまで ▲▲▲
+
       if (!staffCodeInput.value.trim()) { staffCodeInput.classList.add('input-error'); isValid = false; }
       if (!/^\d{15}$/.test((invoiceInput.value || '').trim())) { invoiceInput.classList.add('input-error'); isValid = false; }
       if (!customerInput.value.trim()) { customerInput.classList.add('input-error'); isValid = false; }
@@ -238,6 +255,7 @@
         
         const dataObject = {
           staffCode: staffCodeInput.value.trim(),
+          reportType: reportTypeInput.value, // 追加：報告内容
           invoiceNumber: invoiceInput.value.trim(),
           customerName: customerInput.value.trim(),
           address: addressInput.value.trim(),
